@@ -9,7 +9,7 @@ for arch in $ARCHS; do
 	dir=docker-compose-linux-$arch-$version
 
 	mv Dockerfile.$arch Dockerfile
-	./script/build/linux
+	./script/build-linux
 
 	mkdir $dir
 	cp dist/docker-compose-* $dir/docker-compose-linux-$arch
