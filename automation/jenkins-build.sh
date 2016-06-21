@@ -8,7 +8,7 @@ version=$(cat compose/__init__.py| grep -Po "(?<=__version__ = ')[^']+")
 for arch in $ARCHS; do
 	dir=docker-compose-linux-$arch-$version
 
-	mv Dockerfile.$arch Dockerfile
+	cp Dockerfile.$arch Dockerfile
 	./script/build/linux
 
 	mkdir $dir

@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -ex
-
 TARGET=dist/docker-compose-$(uname -s)-$(uname -m)
 VENV=/code/.tox/py27
 

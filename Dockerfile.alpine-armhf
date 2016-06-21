@@ -1,0 +1,85 @@
+FROM resin/armhf-alpine:3.4
+
+RUN set -ex; \
+    apk add --update \
+        gcc \
+        make \
+        zlib \
+        zlib-dev \
+        openssl-dev \
+        git \
+        ca-certificates \
+        curl \
+        sqlite-dev \
+        xz \
+        bash \
+        musl-dev \
+        libc-dev \
+    ; \
+    rm rm -rf /var/cache/apk/*
+
+RUN set -ex \
+    && curl -SLO https://github.com/resin-io/docker/releases/download/1.7.1/docker-arm-1.7.1.tar.xz \
+    && tar -xvJf docker-arm-1.7.1.tar.xz --strip-components=1 \
+    && mv docker /usr/local/bin/docker \
+    && rm -f docker-arm-1.7.1.tar.xz
+
+# Download Python 2.7.11
+RUN set -ex \
+    && curl -SLO "http://resin-packages.s3.amazonaws.com/python/v2.7.11/Python-2.7.11.linux-alpine-armhf.tar.gz" \
+    && echo "e447748b5802d5e5ba4b826218a15aa0058b523875546b1037fd5a54d5f550ae  Python-2.7.11.linux-alpine-armhf.tar.gz" | sha256sum -c - \
+    && tar -xzf "Python-2.7.11.linux-alpine-armhf.tar.gz" --strip-components=1 \
+    && rm -rf "Python-2.7.11.linux-alpine-armhf.tar.gz"
+
+# Build python 3.4 from source
+RUN set -ex \
+    && curl -SLO "http://resin-packages.s3.amazonaws.com/python/v3.4.4/Python-3.4.4.linux-alpine-armhf.tar.gz" \
+    && echo "cce4e51a32aa41dfe52e498f55d84c1168a204852fea1c36243d9a7c9267d598  Python-3.4.4.linux-alpine-armhf.tar.gz" | sha256sum -c - \
+    && tar -xzf "Python-3.4.4.linux-alpine-armhf.tar.gz" --strip-components=1 \
+    && rm -rf "Python-3.4.4.linux-alpine-armhf.tar.gz"
+
+# Make libpython findable
+#ENV LD_LIBRARY_PATH /usr/local/lib
+
+# Install setuptools
+RUN set -ex; \
+    curl -L https://bootstrap.pypa.io/ez_setup.py | python
+
+# Install pip
+RUN set -ex; \
+    curl -L https://pypi.python.org/packages/source/p/pip/pip-7.0.1.tar.gz | tar -xz; \
+    cd pip-7.0.1; \
+    python setup.py install; \
+    cd ..; \
+    rm -rf pip-7.0.1
+
+# Python3 requires a valid locale
+#RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && locale-gen
+ENV LANG en_US.UTF-8
+
+RUN adduser -h /home/user -D -s /bin/bash user
+WORKDIR /code/
+
+RUN pip install tox==2.1.1
+
+ADD requirements.txt /code/
+ADD requirements-dev.txt /code/
+ADD .pre-commit-config.yaml /code/
+ADD setup.py /code/
+ADD tox.ini /code/
+ADD compose /code/compose/
+RUN tox --notest
+
+RUN mkdir -p /tmp/pyinstaller; \
+    curl -SLO https://github.com/pyinstaller/pyinstaller/archive/v3.1.1.tar.gz; \
+    tar -xzf v3.1.1.tar.gz -C /tmp/pyinstaller --strip-components=1; \
+    cd /tmp/pyinstaller/bootloader; \
+    curl -LO https://raw.githubusercontent.com/matysek/pyinstaller/6d65e7cea428ac207a27297c8adc169c17ee5776/bootloader/wscript; \
+    python ./waf distclean --no-lsb all; \
+    ln -s /tmp/pyinstaller/PyInstaller /code/.tox/py27/lib/python2.7/site-packages/PyInstaller; \
+    sed -i '/    if is_unix:/i\ \ \ \ return 0' /code/.tox/py27/lib/python2.7/site-packages/PyInstaller/utils/misc.py
+
+ADD . /code/
+RUN chown -R user /code/
+
+ENTRYPOINT ["/code/.tox/py27/bin/docker-compose"]
