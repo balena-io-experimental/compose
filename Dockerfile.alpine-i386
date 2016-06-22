@@ -81,6 +81,6 @@ RUN ln -s /lib/ld-musl-i386.so.1 /lib/ld-linux.so.2
 
 ADD . /code/
 RUN chown -R user /code/
-RUN cp -f linux-entrypoint.alpine-i386 /code/script/build/linux-entrypoint
+RUN cp -f linux-entrypoint.alpine /code/script/build/linux-entrypoint
 
 ENTRYPOINT ["/code/.tox/py27/bin/docker-compose"]

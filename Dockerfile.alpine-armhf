@@ -70,16 +70,14 @@ ADD tox.ini /code/
 ADD compose /code/compose/
 RUN tox --notest
 
-RUN mkdir -p /tmp/pyinstaller; \
-    curl -SLO https://github.com/pyinstaller/pyinstaller/archive/v3.1.1.tar.gz; \
-    tar -xzf v3.1.1.tar.gz -C /tmp/pyinstaller --strip-components=1; \
-    cd /tmp/pyinstaller/bootloader; \
-    curl -LO https://raw.githubusercontent.com/matysek/pyinstaller/6d65e7cea428ac207a27297c8adc169c17ee5776/bootloader/wscript; \
-    python ./waf distclean --no-lsb all; \
-    ln -s /tmp/pyinstaller/PyInstaller /code/.tox/py27/lib/python2.7/site-packages/PyInstaller; \
-    sed -i '/    if is_unix:/i\ \ \ \ return 0' /code/.tox/py27/lib/python2.7/site-packages/PyInstaller/utils/misc.py
+RUN cd / \
+    && git clone https://github.com/pyinstaller/pyinstaller.git \
+    && cd /pyinstaller/bootloader \
+    && python ./waf distclean --no-lsb all \
+    && ln -s /pyinstaller/PyInstaller /code/.tox/py27/lib/python2.7/site-packages/PyInstaller
 
 ADD . /code/
 RUN chown -R user /code/
+RUN cp -f linux-entrypoint.alpine /code/script/build/linux-entrypoint
 
 ENTRYPOINT ["/code/.tox/py27/bin/docker-compose"]
