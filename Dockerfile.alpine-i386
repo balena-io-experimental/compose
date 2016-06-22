@@ -73,8 +73,8 @@ RUN tox --notest
 RUN cd / \
     && git clone https://github.com/pyinstaller/pyinstaller.git \
     && cd /pyinstaller/bootloader \
-    && python ./waf distclean --no-lsb all; \
-    && ln -s /pyinstaller/PyInstaller /code/.tox/py27/lib/python2.7/site-packages/PyInstaller;
+    && python ./waf distclean --no-lsb all \
+    && ln -s /pyinstaller/PyInstaller /code/.tox/py27/lib/python2.7/site-packages/PyInstaller
 
 RUN ln -s /lib/libc.musl-x86.so.1 ldd
 RUN ln -s /lib/ld-musl-i386.so.1 /lib/ld-linux.so.2
